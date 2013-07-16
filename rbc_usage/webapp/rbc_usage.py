@@ -12,6 +12,7 @@ from model import *
 
 app = Flask(__name__)
 app.config.from_object('rbc_usage.webapp.default_settings.DevelopmentConfig')
+app.config.from_envvar('RBC_USAGE')
 
 engine = create_engine(app.config['DATABASE_URI'])
 db_session = scoped_session(sessionmaker(bind=engine, autocommit=False, autoflush=False))

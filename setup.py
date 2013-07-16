@@ -12,7 +12,7 @@ data_files =  conf_files + dirs
 
 setup(
     name=name,
-    version='0.2',
+    version='0.3',
     author='RedBridge AB',
     data_files = data_files,
     packages=['rbc_usage','rbc_usage.collectors', 'rbc_usage.webapp', 'rbc_usage.common'],
