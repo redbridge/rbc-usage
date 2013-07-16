@@ -15,7 +15,7 @@ setup(
     version='0.2',
     author='RedBridge AB',
     data_files = data_files,
-    packages=['rbc_usage',],
+    packages=['rbc_usage','rbc_usage.collectors', 'rbc_usage.webapp', 'rbc_usage.common'],
     scripts=glob('bin/*'),
     install_requires=requires,
     entry_points = {
