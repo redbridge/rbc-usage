@@ -9,6 +9,7 @@
 import sys, os
 import ConfigParser
 import logging
+import random
 from datetime import datetime, timedelta
 from optparse import OptionParser
 from rbc_usage.common import logging_config
@@ -245,6 +246,7 @@ def main():
     parser.add_option('-e', '--end', dest="end", help="End date")
     parser.add_option('-f', '--force', dest="force", action="store_true", default=False, help="Force updates")
     parser.add_option('-i', '--initdb', dest="initdb", action="store_true", default=False, help="Initialize the database")
+    parser.add_option('-n', '--no-splay', dest="nosplay", action="store_true", default=False, help="Disable splay")
     (options, args) = parser.parse_args()
     start = datetime.strptime(options.start, '%Y-%m-%d')
     if options.end:
@@ -256,6 +258,9 @@ def main():
     if options.initdb:
         init_db()
     else:
+        # splay if needed, up to 3 minutes
+        if not options.nosplay:
+            time.sleep(random.random(1,180,10))
         for i in range(delta.days + 1):
             run_day = start + timedelta(days=i)
             update_usage(session_csu, session_cs, session, start=run_day, force=options.force)
