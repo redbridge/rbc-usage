@@ -260,7 +260,7 @@ def main():
     else:
         # splay if needed, up to 3 minutes
         if not options.nosplay:
-            time.sleep(random.random(1,180,10))
+            time.sleep(random.randrange(1,180,10))
         for i in range(delta.days + 1):
             run_day = start + timedelta(days=i)
             update_usage(session_csu, session_cs, session, start=run_day, force=options.force)
