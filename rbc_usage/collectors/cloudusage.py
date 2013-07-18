@@ -6,7 +6,7 @@
 # Needs select privs in cloud and cloud_usage databases (the uri may thus point to the slave mysql)
 # Needs a database to write the calculated daily totals to
 #
-import sys, os
+import sys, os, time
 import ConfigParser
 import logging
 import random
