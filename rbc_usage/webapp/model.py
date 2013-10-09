@@ -18,7 +18,7 @@ class UsageEntry(Base):
     id = Column(Integer, primary_key=True)
     date = Column(Date, nullable = False)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    usage_type = Column(Enum('vm_running','vm_allocated', 
+    usage_type = Column(Enum('os_usage','vm_running','vm_allocated', 
                             'ip_address_allocated',
                             'network_bytes_sent', 'primary_byte_hours', 
                             'secondary_byte_hours', 'swift_byte_hours', 
@@ -29,6 +29,12 @@ class UsageEntry(Base):
     account = relationship('Account', primaryjoin='UsageEntry.account_id == Account.id', backref=backref('usage_entries', lazy='dynamic'))
 
     def __init__(self, date, account, usage_type, raw_usage, size=None, offering_uuid=None, description=None):
+        if usage_type == 0: # os_usage running
+            self.usage_type = 'os_usage'
+            self.daily_usage = raw_usage
+            self.description = description
+            self.account = account
+            self.date = date
         if usage_type == 1: # running vm time
             self.usage_type = 'vm_running'
             self.daily_usage = raw_usage

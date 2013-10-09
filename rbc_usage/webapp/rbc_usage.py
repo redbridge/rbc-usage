@@ -56,6 +56,11 @@ def usage(account_uuid):
         except:
             abort(400)
     try:
+        usage_entries_os_usage = db_session.query(UsageEntry.description, func.sum(UsageEntry.daily_usage))\
+                .filter(UsageEntry.account == account)\
+                .filter(UsageEntry.date.between(start,end))\
+                .filter(UsageEntry.usage_type=='os_usage')\
+                .group_by(UsageEntry.description).all()
         usage_entries_vm_running = db_session.query(UsageEntry.offering_uuid, func.sum(UsageEntry.daily_usage))\
                 .filter(UsageEntry.account == account)\
                 .filter(UsageEntry.date.between(start,end))\
@@ -74,6 +79,7 @@ def usage(account_uuid):
         usage_entries = db_session.query(UsageEntry.usage_type, func.sum(UsageEntry.daily_usage))\
                 .filter(UsageEntry.account == account)\
                 .filter(UsageEntry.date.between(start,end))\
+                .filter(UsageEntry.usage_type!='os_usage')\
                 .filter(UsageEntry.usage_type!='vm_running')\
                 .filter(UsageEntry.usage_type!='vm_allocated')\
                 .filter(UsageEntry.usage_type!='ip_address_allocated')\
@@ -84,6 +90,7 @@ def usage(account_uuid):
         'responseType': 'usageResponse',
         'start': start.strftime('%Y-%m-%d'),
         'end': end.strftime('%Y-%m-%d'),
+        'os_usage': dict(usage_entries_os_usage),
         'vm_running': dict(usage_entries_vm_running),
         'vm_allocated': dict(usage_entries_vm_allocated),
         'ip_address_allocated': dict(usage_entries_ip_allocated),

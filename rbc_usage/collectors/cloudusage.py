@@ -24,7 +24,7 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 config_file = 'cloudusage.cfg'
 for loc in os.curdir, os.path.expanduser("~"), "/opt/redbridge/rbc-usage/etc", os.environ.get('PWD'):
     if os.path.exists(os.path.join(loc,config_file)):
-        try: 
+        try:
             config = ConfigParser.ConfigParser()
             config.read(os.path.join(loc,config_file))
         except IOError:
@@ -50,8 +50,16 @@ class DiskOfferingCs(object):
     ''' This is the service_offering table '''
     pass
 
+class TemplateCs(object):
+    ''' This is the  vm_template table'''
+    pass
+
+class GuestOSCs(object):
+    ''' This is the guest_os table '''
+    pass
+
 def create_session():
-    # cloud_usage 
+    # cloud_usage
     engine_csu = create_engine(config.get('main', 'cloud_usage_uri'))
     metadata_csu = MetaData(engine_csu)
     account_csu = Table('account', metadata_csu, autoload=True)
@@ -67,6 +75,10 @@ def create_session():
     mapper(AccountCs, account_cs)
     disk_offering_cs = Table('disk_offering', metadata_cs, autoload=True)
     mapper(DiskOfferingCs, disk_offering_cs)
+    template_cs = Table('vm_template', metadata_cs, autoload=True)
+    mapper(TemplateCs, template_cs)
+    guest_os_cs = Table('guest_os', metadata_cs, autoload=True)
+    mapper(GuestOSCs, guest_os_cs)
 
     SessionCs = sessionmaker(bind=engine_cs)
     session_cs = SessionCs()
@@ -74,13 +86,13 @@ def create_session():
     session_csu = SessionCsU()
 
     # setup our dedicated model
-    engine = create_engine(config.get('main', 'rbc_usage_uri')) 
+    engine = create_engine(config.get('main', 'rbc_usage_uri'))
     Session = sessionmaker(bind=engine)
     session = Session()
     return (session_csu, session_cs, session)
 
 def init_db():
-    engine = create_engine(config.get('main', 'rbc_usage_uri')) 
+    engine = create_engine(config.get('main', 'rbc_usage_uri'))
     Base.metadata.create_all(engine)
 
 
@@ -122,7 +134,42 @@ def update_usage(session_cloud_usage, session_cloud, session, start=None, force 
                 usage_entry = UsageEntry(start , usage_account, 1, offering[1], offering_uuid = offering_uuid)
                 session.add(usage_entry)
                 session.commit()
-                
+        # Get os type usage for running vm's
+        vm_guest_os_usage = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage))\
+                .filter_by(account_id=account.id)\
+                .filter_by(start_date=start)\
+                .filter_by(usage_type=1)\
+                .group_by(CloudUsageCsU.template_id).all()
+        ue = {}
+        for template in vm_guest_os_usage:
+            os_type = session_cloud.query(TemplateCs).filter_by(id=template[0].template_id).one().guest_os_id
+            description = session_cloud.query(GuestOSCs).filter_by(id=os_type).one().display_name
+            if ue.has_key(description):
+                ue[description] += template[1]
+            else:
+                ue[description] = template[1]
+        for description in ue.keys():
+            if session.query(UsageEntry).filter_by(date=start)\
+                    .filter_by(description=description)\
+                    .filter_by(account=usage_account )\
+                    .filter_by(usage_type='os_usage')\
+                    .count(): # this entry exists
+                pass
+            else:
+                if force and session.query(UsageEntry).filter_by(date=start)\
+                        .filter_by(description=description)\
+                        .filter_by(account=usage_account)\
+                        .filter_by(usage_type='os_usage')\
+                        .count():
+                    usage_entry = session.query(UsageEntry).filter_by(date=start)\
+                            .filter_by(description=description)\
+                            .filter_by(account=usage_account).one() # this entry exists
+                    session.delete(usage_entry)
+                    session.commit()
+                usage_entry = UsageEntry(start , usage_account, 0, float(ue[description]), description = description)
+                session.add(usage_entry)
+                session.commit()
+
         allocated_vm_usage = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage))\
                 .filter_by(account_id=account.id)\
                 .filter_by(start_date=start)\
@@ -177,7 +224,7 @@ def update_usage(session_cloud_usage, session_cloud, session, start=None, force 
                 usage_entry = UsageEntry(start , usage_account, 3, ip[1], description = ip[0].description)
                 session.add(usage_entry)
                 session.commit()
-        
+
         network_bytes_sent = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage))\
                 .filter_by(account_id=account.id)\
                 .filter_by(start_date=start)\
@@ -197,7 +244,7 @@ def update_usage(session_cloud_usage, session_cloud, session, start=None, force 
                     usage_entry = UsageEntry(start , usage_account, 4, bytes_sent[1])
                     session.add(usage_entry)
                     session.commit()
-        
+
         primary_byte_hours = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage * CloudUsageCsU.size))\
                 .filter_by(account_id=account.id)\
                 .filter_by(start_date=start)\
@@ -217,7 +264,7 @@ def update_usage(session_cloud_usage, session_cloud, session, start=None, force 
                     usage_entry = UsageEntry(start , usage_account, 6, p_byte_hours[1])
                     session.add(usage_entry)
                     session.commit()
-        
+
         secondary_byte_hours = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage * CloudUsageCsU.size))\
                 .filter_by(account_id=account.id)\
                 .filter_by(start_date=start)\
