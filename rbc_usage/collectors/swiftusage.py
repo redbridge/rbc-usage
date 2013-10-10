@@ -65,8 +65,8 @@ def account_stats(session):
                         .first()
                 checkins = ue.description.split(':')
                 if not datetime.now().hour in checkins:
-                    ue.daily_usage + float(account_bytes)
-                    ue.description = checkins.append(datetime.now().hour)
+                    ue.daily_usage += float(account_bytes)
+                    ue.description = "%s:%s" % (ue.description,datetime.now().hour)
                     session.add(ue)
                     session.commit()
             else:
