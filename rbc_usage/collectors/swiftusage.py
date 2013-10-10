@@ -70,7 +70,7 @@ def account_stats(session):
                     session.add(ue)
                     session.commit()
             else:
-                usage_entry = UsageEntry(start.strftime('%Y-%m-%d') , account, 100, account_bytes, description="00")
+                usage_entry = UsageEntry(start.strftime('%Y-%m-%d') , account, 100, account_bytes, description=datetime.now().hour)
                 session.add(usage_entry)
                 session.commit()
 
