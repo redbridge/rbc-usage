@@ -39,7 +39,7 @@ def get_swift_auth_token():
     swift_user = config.get('swift', 'swift_admin_user')
     swift_key = config.get('swift', 'swift_admin_key')
     swift_account = config.get('swift', 'swift_admin_accountid')
-    out = subprocess.Popen("curl -s -H 'X-Auth-User: %s:%s' -H 'X-Auth-Key: %s' %s/auth/v1.0 -I" % (swift_account, swift_user, swift_key, swift_url), shell=True, stdout=subprocess.PIPE)
+    out = subprocess.Popen("curl -k -s -H 'X-Auth-User: %s:%s' -H 'X-Auth-Key: %s' %s/auth/v1.0 -I" % (swift_account, swift_user, swift_key, swift_url), shell=True, stdout=subprocess.PIPE)
     for line in out.stdout:
         if "X-Auth-Token" in line:
             return line.split(':')[1].strip()
