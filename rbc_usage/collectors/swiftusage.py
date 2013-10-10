@@ -64,6 +64,7 @@ def account_stats(session):
                         .filter_by(usage_type='swift_byte_hours')\
                         .first()
                 checkins = ue.description.split(':')
+                print checkins
                 if not datetime.now().hour in checkins:
                     ue.daily_usage += float(account_bytes)
                     ue.description = "%s:%s" % (ue.description,datetime.now().hour)
