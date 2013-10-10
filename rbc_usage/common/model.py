@@ -73,10 +73,12 @@ class UsageEntry(Base):
             self.usage_type = 'swift_byte_hours'
             self.daily_usage = raw_usage
             self.account = account
+            self.description = description
             self.date = date
         elif usage_type == 101:
             self.usage_type = 'swift_bytes_sent'
             self.daily_usage = raw_usage
             self.account = account
+            self.description = description
             self.date = date
 

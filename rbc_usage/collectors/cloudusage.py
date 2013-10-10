@@ -105,6 +105,12 @@ def update_usage(session_cloud_usage, session_cloud, session, start=None, force 
             session.commit()
         except IntegrityError: # Trying to insert a duplicate uuid
             session.rollback()
+            try:
+                # Update account name
+                session.query(Account).filter_by(account_uuid = account.uuid).update({'account_name': account.account_name}) # this should never fail
+                session.commit()
+            except Exception, e:
+                print "Error updating account: %s" % e
             usage_account = session.query(Account).filter_by(account_uuid = account.uuid).one() # this should never fail
         # Now update usage for the different types
         running_vm_usage = session_cloud_usage.query(CloudUsageCsU, func.sum(CloudUsageCsU.raw_usage))\

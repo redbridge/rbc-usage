@@ -23,13 +23,12 @@ for loc in os.curdir, os.path.expanduser("~"), "/opt/redbridge/rbc-usage/etc", o
         except IOError:
             pass
 
-def get_swift_stats(account_uuid, auth_token):
+def get_swift_stats(account, auth_token):
     swift_url = config.get('swift', 'swift_url')
     swift_user = config.get('swift', 'swift_admin_user')
     swift_key = config.get('swift', 'swift_admin_key')
     swift_account = config.get('swift', 'swift_admin_accountid')
-    reseller_prefix = config.get('swift', 'reseller_prefix')
-    out = subprocess.Popen("swift --os-auth-token %s --os-storage-url %s/v1/%s_%s stat" % (auth_token, swift_url, reseller_prefix, account_uuid), shell=True, stdout=subprocess.PIPE)
+    out = subprocess.Popen("swift --os-auth-token %s --os-storage-url %s/v1/%s stat" % (auth_token, swift_url, account), shell=True, stdout=subprocess.PIPE)
     for line in out.stdout:
         if "Bytes: " in line:
             return line.split(':')[1].strip()
@@ -53,7 +52,7 @@ def account_stats(session):
     swift_token = get_swift_auth_token()
     start = datetime.now()
     for account in accounts:
-        account_bytes = get_swift_stats(account.account_uuid, swift_token)
+        account_bytes = get_swift_stats(account.account_name, swift_token)
         if account_bytes:
             if session.query(UsageEntry).filter_by(date=start.strftime('%Y-%m-%d'))\
                     .filter_by(account=account )\
@@ -64,11 +63,14 @@ def account_stats(session):
                         .filter_by(account=account )\
                         .filter_by(usage_type='swift_byte_hours')\
                         .first()
-                ue.daily_usage + float(account_bytes)
-                session.add(ue)
-                session.commit()
+                checkins = ue.description.split(':')
+                if not datetime.now().hour in checkins:
+                    ue.daily_usage + float(account_bytes)
+                    ue.description = checkins.append(datetime.now().hour)
+                    session.add(ue)
+                    session.commit()
             else:
-                usage_entry = UsageEntry(start.strftime('%Y-%m-%d') , account, 100, account_bytes)
+                usage_entry = UsageEntry(start.strftime('%Y-%m-%d') , account, 100, account_bytes, description="00")
                 session.add(usage_entry)
                 session.commit()
 
