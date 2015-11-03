@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import Column, Integer, Float, String, Date, Enum, ForeignKey, func, or_
 
 logging.basicConfig(format='%(asctime)s %(message)s')
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 config_file = 'cloudusage.cfg'
 for loc in os.curdir, os.path.expanduser("~"), "/opt/redbridge/rbc-usage/etc", os.environ.get('PWD'):
     if os.path.exists(os.path.join(loc,config_file)):
